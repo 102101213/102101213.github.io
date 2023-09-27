@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>Sudoku Generator</title>
+  <style>
+    .sudoku-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: 10px;
+    }
+
+    td {
+      width: 30px;
+      height: 30px;
+      text-align: center;
+      border: 1px solid black;
+    }
+
+    button {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sudoku-container"></div>
+  <button onclick="generateSudokus()">开始游戏</button>
+  <button onclick="verifySudokus()">提交</button>
+
+  <script>
+    var sudokuContainer = document.querySelector(".sudoku-container");
+    var sudokus = []; // 存储生成的数独
+
+    function generateSudokus() {
+      sudokuContainer.innerHTML = "";
+      sudokus = []; // 清空之前生成的数独
+      var numSudokus = 9; // 生成9个数独
+      for (var i = 0; i < numSudokus; i++) {
+        var sudoku = generateSudoku();
+        sudokus.push(sudoku); // 将数独添加到数组中
+        displaySudoku(sudoku);
+      }
+    }
+
+   function generateSudoku() {
+  var sudoku = createEmptySudoku();
+  solveSudoku(sudoku);
+  removeCells(sudoku, 40);
+  while (!hasUniqueSolution(sudoku)) {
+    var emptyCell = findFilledCell(sudoku);
+    sudoku[emptyCell.row][emptyCell.col] = 0;
+  }
+  shuffleSudoku(sudoku);
+  return sudoku;
+}
+
+function hasUniqueSolution(sudoku) {
+  var sudokuCopy = JSON.parse(JSON.stringify(sudoku));
+  return solveSudoku(sudokuCopy);
+}
+
+function findFilledCell(sudoku) {
+  for (var row = 0; row < 9; row++) {
+    for (var col = 0; col < 9; col++) {
+      if (sudoku[row][col] !== 0) {
+        return { row: row, col: col };
+      }
+    }
+  }
+  return null;
+}
+
+    function removeCells(sudoku, numCells) {
+      var emptyCells = getEmptyCells(sudoku);
+      var cellsToRemove = getRandomElements(emptyCells, numCells);
+      for (var i = 0; i < cellsToRemove.length; i++) {
+        var cell = cellsToRemove[i];
+        sudoku[cell.blockRow][cell.blockCol][cell.row][cell.col] = 0;
+      }
+    }
+
+    function getRandomElements(arr, numElements) {
+      var shuffled = arr.slice();
+      var randomElements = [];
+      var currentIndex = shuffled.length;
+      var temporaryValue, randomIndex;
+
+      while (currentIndex > 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+
+        temporaryValue = shuffled[currentIndex];
+        shuffled[currentIndex] = shuffled[randomIndex];
+        shuffled[randomIndex] = temporaryValue;
+
+        randomElements.push(shuffled[currentIndex]);
+        if (randomElements.length === numElements) {
+          break;
+        }
+      }
+
+      return randomElements;
+    }
+     //开始
+       function createEmptySudoku() {
+  var sudoku = [];
+  var numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+  // 随机打乱数字顺序
+  numbers = shuffleArray(numbers);
+
+  for (var i = 0; i < 9; i++) {
+    sudoku[i] = [];
+    for (var j = 0; j < 9; j++) {
+      sudoku[i][j] = numbers[(i * 3 + Math.floor(i / 3) + j) % 9];
+    }
+  }
+
+  return sudoku;
+}
+
+// 随机打乱数组元素顺序
+function shuffleArray(array) {
+  var currentIndex = array.length;
+  var temporaryValue, randomIndex;
+
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+    function solveSudoku(sudoku) {
+      var emptyCell = findEmptyCell(sudoku);
+      if (!emptyCell) {
+        return true;
+      }
+
+      var row = emptyCell[0];
+      var col = emptyCell[1];
+
+      for (var num = 1; num <= 9; num++) {
+        if (isValidMove(sudoku, row, col, num)) {
+          sudoku[row][col] = num;
+          if (solveSudoku(sudoku)) {
+            return true;
+          }
+          sudoku[row][col] = 0;
+        }
+      }
+
+      return false;
+    }
+
+    function findEmptyCell(sudoku) {
+      for (var row = 0; row < 9; row++) {
+        for (var col = 0; col < 9; col++) {
+          if (sudoku[row][col] === 0) {
+            return [row, col];
+          }
+        }
+      }
+      return null;
+    }
+
+    function isValidMove(sudoku, row, col, num) {
+      return (
+        isRowValid(sudoku, row, num) &&
+        isColumnValid(sudoku, col, num) &&
+        isBoxValid(sudoku, row - (row % 3), col - (col % 3), num)
+      );
+    }
+
+    // 其他函数的实现与之前的代码示例相同
+    function isRowValid(sudoku, row, num) {
+      for (var col = 0; col < 9; col++) {
+        if (sudoku[row][col] === num) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function isColumnValid(sudoku, col, num) {
+      for (var row = 0; row < 9; row++) {
+        if (sudoku[row][col] === num) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function isBoxValid(sudoku, boxStartRow, boxStartCol, num) {
+      for (var row = 0; row < 3; row++) {
+        for (var col = 0; col < 3; col++) {
+          if (sudoku[row + boxStartRow][col + boxStartCol] === num) {
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+        function removeCells(sudoku, difficulty) {
+      var cellsToRemove = 81 - difficulty;
+      while (cellsToRemove > 0) {
+        var row = Math.floor(Math.random() * 9);
+        var col = Math.floor(Math.random() * 9);
+        if (sudoku[row][col] !== 0) {
+          sudoku[row][col] = 0;
+          cellsToRemove--;
+        }
+      }
+    }
+function shuffleSudoku(sudoku) {
+  // 随机打乱行
+  for (var i = 0; i < 0; i++) {
+    var startRow = i * 3;
+    var endRow = startRow + 2;
+    var randomRow = Math.floor(Math.random() * 3);
+    var temp = sudoku[startRow].slice();
+    sudoku[startRow] = sudoku[randomRow].slice();
+    sudoku[randomRow] = temp;
+    temp = sudoku[endRow].slice();
+    sudoku[endRow] = sudoku[randomRow + 6].slice();
+    sudoku[randomRow + 6] = temp;
+  }
+
+  // 随机打乱列
+  for (var i = 0; i < 0; i++) {
+    var startCol = i * 3;
+    var endCol = startCol + 2;
+    var randomCol = Math.floor(Math.random() * 3);
+
+    for (var row = 0; row < 9; row++) {
+      var temp = sudoku[row][startCol];
+      sudoku[row][startCol] = sudoku[row][startCol + randomCol];
+      sudoku[row][startCol + randomCol] = temp;
+    }
+
+    for (var box = 0; box < 3; box++) {
+      var randomBoxRow = Math.floor(Math.random() * 3);
+      var temp = sudoku[startCol + box][endCol];
+      sudoku[startCol + box][endCol] = sudoku[startCol + randomBoxRow][endCol];
+      sudoku[startCol + randomBoxRow][endCol] = temp;
+    }
+  }
+}
+
+    function displaySudoku(sudoku) {
+      var table = document.createElement("table");
+      for (var row = 0; row < 9; row++) {
+        var tr = document.createElement("tr");
+        for (var col = 0; col < 9; col++) {
+          var td = document.createElement("td");
+          var value = sudoku[row][col];
+          td.innerText = value !== 0 ? value : "";
+          td.contentEditable = true; // 设置单元格可编辑
+          tr.appendChild(td);
+        }
+        table.appendChild(tr);
+      }
+      sudokuContainer.appendChild(table);
+    }
+
+    function verifySudokus() {
+      var isValid = true;
+      for (var i = 0; i < sudokus.length; i++) {
+        var table = sudokuContainer.children[i];
+        var rows = table.getElementsByTagName("tr");
+        var sudoku = sudokus[i];
+        for (var row = 0; row < 9; row++) {
+          var cols = rows[row].getElementsByTagName("td");
+          for (var col = 0; col < 9; col++) {
+            var cell = cols[col];
+            var value = parseInt(cell.innerText) || 0;
+            if (value !== sudoku[row][col]) {
+              isValid = false;
+              cell.style.backgroundColor = "red"; // 错误的数字标记为红色背景
+            } else {
+              cell.style.backgroundColor = "white"; // 正确的数字恢复为白色背景
+            }
+          }
+        }
+      }
+
+      if (isValid) {
+        alert("All sudokus are valid!");
+      } else {
+        alert("There are errors in the sudokus.");
+      }
+    }
+  </script>
+</body>
+</html>
